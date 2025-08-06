@@ -28,7 +28,7 @@ using namespace SPPARKS_NS;
 
 // customize by adding keyword to 1st enum
 
-enum{ID,SITE,X,Y,Z,ENERGY,PROPENSITY,IARRAY,DARRAY};  // in other dump files
+enum{ID,STYPE,SITE,X,Y,Z,ENERGY,PROPENSITY,IARRAY,DARRAY};  // in other dump files
 enum{LT,LE,GT,GE,EQ,NEQ};
 enum{INT,DOUBLE,TAGINT};           // in other dump files
 
@@ -45,15 +45,19 @@ DumpOvito::DumpOvito(SPPARKS *spk, int narg, char **arg) : Dump(spk, narg, arg)
   
   if (narg == 4) {
     def = 1;
-    narg = 9;
+    narg = 10;
     argcopy = new char*[narg];
     argcopy[4] = (char *) "id";
-    argcopy[5] = new char[6];
-    strcpy(argcopy[5],"site");
-    argcopy[6] = (char *) "x";
-    argcopy[7] = (char *) "y";
-    argcopy[8] = (char *) "z";
+    argcopy[5] = (char *) "type";
+    argcopy[6] = (char *) "site";
+    argcopy[7] = (char *) "x";
+    argcopy[8] = (char *) "y";
+    argcopy[9] = (char *) "z";
   } else argcopy = arg;
+
+  for (int i = 1; i < narg; i++) {
+   printf("--> DEBUG post argcopy %d %s \n",i , argcopy[i]);
+}
 
   // size_one may be shrunk below if additional optional args exist
 
@@ -70,10 +74,14 @@ DumpOvito::DumpOvito(SPPARKS *spk, int narg, char **arg) : Dump(spk, narg, arg)
 
   ioptional = parse_fields(narg,argcopy);
 
+  printf("--> DEBUG pre ioptional, narg %d, ioptional %d \n", narg, ioptional);
+
   if (ioptional < narg && strcmp(style,"image") != 0)
     error->all(FLERR,"Invalid attribute in dump ovito command");
   size_one = ioptional - 4;
 
+
+  printf("--> DEBUG post ioptional\n");
   // setup vformat strings, one per field
 
   for (int i = 0; i < size_one; i++) {
@@ -85,34 +93,51 @@ DumpOvito::DumpOvito(SPPARKS *spk, int narg, char **arg) : Dump(spk, narg, arg)
     vformat[i] = new char[n];
     strcpy(vformat[i],format);
   }
+  printf("--> DEBUG post size_one\n");
 
   // setup column string
-  // change "site" to "type" to be LAMMPS compatible
-  // in column_orig, keep it as "site"
 
   int n = 0;
-  for (int iarg = 4; iarg < narg; iarg++) n += strlen(argcopy[iarg]) + 2;
+  for (int iarg = 4; iarg < narg; iarg++) {
+    n += strlen(argcopy[iarg]) + 2;
+    printf("--> DEBUG in strlen loop, n %d, argcopy[iarg] %s \n", n, argcopy[iarg]);
+  }
   columns = new char[n];
   columns[0] = '\0';
   for (int iarg = 4; iarg < narg; iarg++) {
-    if (strstr(argcopy[iarg],"site")) strcat(columns,"type");
-    else strcat(columns,argcopy[iarg]);
+    // if (strstr(argcopy[iarg],"site")) strcat(columns,"type");
+    // else strcat(columns,argcopy[iarg]);
+    strcat(columns,argcopy[iarg]);
     if (iarg != narg-1) strcat(columns," ");
+    printf("--> DEBUG in columns copy, iarg %d, argcopy[iarg] %s \n", iarg, argcopy[iarg]);
+    printf("--> DEBUG in columns %s \n", columns);
   }
 
   columns_orig = new char[n];
   strcpy(columns_orig,columns);
+
+  printf("--> DEBUG post strcopy cols_orig %s\n", columns_orig);
+  printf("--> DEBUG post strcopy cols %s\n", columns);
   while (strstr(columns_orig,"type")) {
     char *ptr = strstr(columns_orig,"type");
     strncpy(ptr,"site",4);
   }
 
+  printf("--> DEBUG postPOST strcopy cols_orig %s\n", columns_orig);
+  printf("--> DEBUG postPOST strcopy cols %s\n", columns);
+
   // delete argcopy if default output created
 
   if (def) {
-    delete [] argcopy[5];
+    // delete [] argcopy[5];
+
+  printf("--> DEBUG  delete argcopy[5]\n");
     delete [] argcopy;
+
+  printf("--> DEBUG  delete argcopy final\n");
   }
+
+  printf("--> DEBUG post delete argcopy\n");
 
   // dump params
 
@@ -132,11 +157,16 @@ DumpOvito::DumpOvito(SPPARKS *spk, int narg, char **arg) : Dump(spk, narg, arg)
 
   // setup function ptrs
 
+
+
+  printf("--> DEBUG pre write \n");
+
   if (binary) header_choice = &DumpOvito::header_binary;
   else header_choice = &DumpOvito::header_text;
 
   if (binary) write_choice = &DumpOvito::write_binary;
   else write_choice = &DumpOvito::write_text;
+  printf("--> DEBUG post write \n");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -241,7 +271,9 @@ int DumpOvito::count()
 	for (i = 0; i < nlocal; i++) dchoose[i] = id[i];
 	ptr = dchoose;
 	nstride = 1;
-      } else if (thresh_array[ithresh] == SITE) {
+      } // TODO add stype here 
+      
+      else if (thresh_array[ithresh] == SITE) {
 	int *site = app->iarray[0];
 	for (i = 0; i < nlocal; i++) dchoose[i] = site[i];
 	ptr = dchoose;
@@ -430,6 +462,10 @@ int DumpOvito::parse_fields(int narg, char **arg)
       fields[i] = ID;
       pack_choice[i] = &DumpOvito::pack_id;
       vtype[i] = TAGINT;
+    } else if (strcmp(arg[iarg],"type") == 0) {
+      fields[i] = STYPE;
+      pack_choice[i] = &DumpOvito::pack_stype;
+      vtype[i] = INT;
     } else if (strcmp(arg[iarg],"site") == 0) {
       fields[i] = SITE;
       pack_choice[i] = &DumpOvito::pack_site;
@@ -611,6 +647,26 @@ void DumpOvito::pack_id(int n)
     buf[n] = id[clist[i]];
     n += size_one;
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpOvito::pack_stype(int n)
+{
+  // int *site = app->iarray[0];
+
+  // for (int i = 0; i < nchoose; i++) {
+  //   buf[n] = site[clist[i]];
+  //   n += size_one;
+  // } 
+
+  // dummy for now, stype is always 1
+  // TODO implement site stype system
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = 1;
+    n += size_one;
+  }
+
 }
 
 /* ---------------------------------------------------------------------- */

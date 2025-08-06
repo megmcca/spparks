@@ -79,6 +79,7 @@ class DumpOvito : public Dump {
   FnPtrPack *pack_choice;              // ptrs to pack functions
 
   void pack_id(int);
+  void pack_stype(int);
   void pack_site(int);
   void pack_x(int);
   void pack_y(int);
