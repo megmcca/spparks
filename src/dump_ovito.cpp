@@ -56,7 +56,6 @@ DumpOvito::DumpOvito(SPPARKS *spk, int narg, char **arg) : Dump(spk, narg, arg)
   } else argcopy = arg;
 
   for (int i = 1; i < narg; i++) {
-   printf("--> DEBUG post argcopy %d %s \n",i , argcopy[i]);
 }
 
   // size_one may be shrunk below if additional optional args exist
@@ -74,14 +73,10 @@ DumpOvito::DumpOvito(SPPARKS *spk, int narg, char **arg) : Dump(spk, narg, arg)
 
   ioptional = parse_fields(narg,argcopy);
 
-  printf("--> DEBUG pre ioptional, narg %d, ioptional %d \n", narg, ioptional);
-
   if (ioptional < narg && strcmp(style,"image") != 0)
     error->all(FLERR,"Invalid attribute in dump ovito command");
   size_one = ioptional - 4;
 
-
-  printf("--> DEBUG post ioptional\n");
   // setup vformat strings, one per field
 
   for (int i = 0; i < size_one; i++) {
@@ -93,51 +88,34 @@ DumpOvito::DumpOvito(SPPARKS *spk, int narg, char **arg) : Dump(spk, narg, arg)
     vformat[i] = new char[n];
     strcpy(vformat[i],format);
   }
-  printf("--> DEBUG post size_one\n");
 
   // setup column string
 
   int n = 0;
   for (int iarg = 4; iarg < narg; iarg++) {
     n += strlen(argcopy[iarg]) + 2;
-    printf("--> DEBUG in strlen loop, n %d, argcopy[iarg] %s \n", n, argcopy[iarg]);
   }
+
   columns = new char[n];
   columns[0] = '\0';
   for (int iarg = 4; iarg < narg; iarg++) {
-    // if (strstr(argcopy[iarg],"site")) strcat(columns,"type");
-    // else strcat(columns,argcopy[iarg]);
     strcat(columns,argcopy[iarg]);
     if (iarg != narg-1) strcat(columns," ");
-    printf("--> DEBUG in columns copy, iarg %d, argcopy[iarg] %s \n", iarg, argcopy[iarg]);
-    printf("--> DEBUG in columns %s \n", columns);
+    
   }
 
   columns_orig = new char[n];
   strcpy(columns_orig,columns);
-
-  printf("--> DEBUG post strcopy cols_orig %s\n", columns_orig);
-  printf("--> DEBUG post strcopy cols %s\n", columns);
   while (strstr(columns_orig,"type")) {
     char *ptr = strstr(columns_orig,"type");
     strncpy(ptr,"site",4);
   }
 
-  printf("--> DEBUG postPOST strcopy cols_orig %s\n", columns_orig);
-  printf("--> DEBUG postPOST strcopy cols %s\n", columns);
-
   // delete argcopy if default output created
 
   if (def) {
-    // delete [] argcopy[5];
-
-  printf("--> DEBUG  delete argcopy[5]\n");
     delete [] argcopy;
-
-  printf("--> DEBUG  delete argcopy final\n");
   }
-
-  printf("--> DEBUG post delete argcopy\n");
 
   // dump params
 
@@ -157,16 +135,11 @@ DumpOvito::DumpOvito(SPPARKS *spk, int narg, char **arg) : Dump(spk, narg, arg)
 
   // setup function ptrs
 
-
-
-  printf("--> DEBUG pre write \n");
-
   if (binary) header_choice = &DumpOvito::header_binary;
   else header_choice = &DumpOvito::header_text;
 
   if (binary) write_choice = &DumpOvito::write_binary;
   else write_choice = &DumpOvito::write_text;
-  printf("--> DEBUG post write \n");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -653,15 +626,10 @@ void DumpOvito::pack_id(int n)
 
 void DumpOvito::pack_stype(int n)
 {
-  // int *site = app->iarray[0];
-
-  // for (int i = 0; i < nchoose; i++) {
-  //   buf[n] = site[clist[i]];
-  //   n += size_one;
-  // } 
 
   // dummy for now, stype is always 1
   // TODO implement site stype system
+  
   for (int i = 0; i < nchoose; i++) {
     buf[n] = 1;
     n += size_one;

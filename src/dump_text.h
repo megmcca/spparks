@@ -67,8 +67,8 @@ class DumpText : public Dump {
 
   typedef void (DumpText::*FnPtrHeader)(bigint, double);
   FnPtrHeader header_choice;           // ptr to write header functions
-  void header_binary(bigint, double);
-  void header_text(bigint, double);
+  virtual void header_binary(bigint, double);
+  virtual void header_text(bigint, double);
 
   typedef void (DumpText::*FnPtrData)(int, double *);
   FnPtrData write_choice;              // ptr to write data functions
